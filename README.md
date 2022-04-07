@@ -13,6 +13,7 @@ Project first developed in DataCamp repository with Python and the presentation 
 #Your presentation should be no longer than ten minutes. It should include no more than eight slides of content. 
 #You will be presenting to the Head of Sales.
 
+#**-- Deutsch Version**
 
 Case of Study eines Pens & Printers-Unternehmens über deren Vertrieb. 
 Das Projekt wurde zuerst im DataCamp-Repository mit Python entwickelt und die Präsentation wurde mit KeyNotes erstellt und nach PowerPoint exportiert.
