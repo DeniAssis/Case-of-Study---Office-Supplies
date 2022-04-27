@@ -1,0 +1,169 @@
+# Load packages
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt
+
+# Start coding here..# Load data from the csv file
+df = pd.read_csv('office_supplies.csv', index_col=None)
+
+df_product = pd.DataFrame(df, columns= ['Product Name', 'Category', 'Sub-Category'])
+df2 = pd.DataFrame(df, columns= ['Region', 'Product Name', 'Quantity'])
+df2 = df.groupby(['Region', 'Product Name'])['Quantity'].agg("sum")
+df2.fillna(0, inplace=True)
+
+df2 = df2.reset_index()  # <- Here is reset_index()
+#cols = df2.columns
+
+df2_a = pd.DataFrame(df, columns= ['Product Name', 'Category', 'Quantity'])
+df2_a = df.groupby(['Product Name', 'Category'])['Quantity'].agg("sum")
+
+df2_acat = pd.DataFrame(df, columns= ['Product Name', 'Category', 'Quantity'])
+df2_acat = df.groupby(['Category'])['Quantity'].agg('sum')
+
+
+df2_a = df2_a.reset_index()  # <- Here is reset_index()
+
+df2_b = pd.DataFrame(df, columns= ['Quantity', 'Sales', 'Order Date', 'Region'])
+df2_b['Order Date']= pd.to_datetime(df2_b['Order Date'])
+df2_b = df2_b.rename(columns={'Order Date': 'Year'})
+df2_b['Year'] = df2_b['Year'].dt.year
+df2_b['Sales'] = df2_b['Sales'].round(2)
+df2_b = df2_b.groupby(['Year', 'Region'])['Sales', 'Quantity'].agg("sum")
+df2_b = df2_b.sort_values(['Year', 'Region', 'Sales', 'Quantity'], ascending=[False, False, True, True])
+df2_b.groupby(['Year','Region']).sum().unstack().plot(kind='bar',y='Sales')
+plt.title('Sales per Year and Region', fontsize=14)
+plt.xlabel('Year', fontsize=14)
+plt.ylabel('Sales (US$)', fontsize=14)
+print(df2_b, '')
+
+df2_b.groupby(['Year','Region']).sum().unstack().plot(kind='bar',y='Quantity')
+plt.title('Quantity of Sales per Year and Region', fontsize=14)
+plt.xlabel('Year', fontsize=14)
+plt.ylabel('Quantity of Sales', fontsize=14)
+
+df2_c = pd.DataFrame(df, columns= ['Ship Mode', 'Order Date', 'Region'])
+df2_c['Order Date']= pd.to_datetime(df2_c['Order Date'])
+df2_c = df2_c.rename(columns={'Order Date': 'Year', 'Ship Mode': 'Ship'})
+df2_c['Year'] = df2_c['Year'].dt.year
+df2_c = df2_c.groupby(['Year', 'Region'])['Ship'].count()
+print('Ship Mode')
+print(df2_c)
+
+df2_b.fillna(0, inplace=True)
+
+df2_b = df2_b.reset_index()  # <- Here is reset_index()
+
+# quantity of sales and their regions
+df2_b = df2_b.sort_values(['Quantity', 'Region'], ascending=[False, True])
+print('Quantity of Sales per Region')
+print(df2_b.head(10))
+
+# Total Sales of Products
+df2_aq = pd.DataFrame(df, columns= ['Product Name', 'Quantity'])
+df2_aq = df.groupby(['Product Name', 'Category'])['Quantity'].agg("sum")
+df2_aq = df2_a.sort_values(['Quantity'], ascending=[False])
+#del df2_aq['Category']
+df2_aq.drop(df2_aq.tail(len(df2_aq)-10).index, inplace = True)
+df2_aq.groupby(['Product Name', 'Category']).sum().plot(kind='barh',y='Quantity', legend = False, color=['r', 'g', 'b', 'k', 'm', 'y', 'c', 'b'])
+plt.title('Products with higher Quantity of Sales', fontsize=14)
+#df2_aq['Product Name'] = df2_aq['Product Name'].str.slice(start=0, stop=5, step=1)
+print('                   Products with higher Quantity of Sales')
+plt.xlabel(' ')
+plt.ylabel(' ')
+df2_aprint = df2_aq.to_string(index=False)
+print(df2_aprint)
+del df2_aq['Category']
+
+# Total Sales of Products per Category
+df2_acat = pd.DataFrame(df, columns= ['Category', 'Quantity'])
+df2_acat = df2_acat.groupby(['Category'])['Quantity'].agg("sum")
+print(df2_acat, 'df2_acat')
+
+df2_acat = df2_a.sort_values(['Quantity'], ascending=[False])
+df2_acat.groupby(['Category']).sum().plot(kind='bar',y='Quantity', legend = False, color=['r', 'g', 'b', 'k', 'm', 'y'])
+plt.title('Quantity of Sales per Category', fontsize=14)
+plt.xlabel(' ')
+plt.ylabel(' ')
+
+
+# how are the sales per region for the product with higher quantity of sales
+higher_sales = df2_aq['Product Name'].iloc[0]
+df3 = df2[df2['Product Name'] == higher_sales].sort_values(by=['Quantity', 'Region'], ascending=[False, True])
+del df3['Product Name']
+print('Product with higher Quantity of Sales (per Region): ', higher_sales)
+print(df3.head(10))
+
+# Total Sales of Products
+df2_a = df2_a.sort_values(['Quantity', 'Product Name'], ascending=[False, True])
+df2_region = pd.DataFrame(df, columns= ['Region', 'Product Name'])
+df2_ab = df2_a.groupby(['Product Name'])
+df2_a['Total Sales'] = df2_ab['Quantity'].transform(sum)
+del df2_a['Quantity']
+df2_a['Region'] = ''
+df2_a['Category'] = ''
+df2_a['Order Date'] = ''
+df2_a = df2_a.sort_values(['Total Sales'], ascending=[True])
+df2_a.drop(df2_a.tail(len(df2_a)-5).index, inplace = True)
+df2_a = df2_a.reset_index()
+for p in range(len(df2_a)):
+    product = df2_a.loc[p, 'Product Name']
+    region = df2_region.loc[df2_region['Product Name'] == product, 'Region'].item()  
+    orderdate = df.loc[df['Product Name'] == product, 'Order Date'].item()  
+    category = df_product.loc[df_product['Product Name'] == product, 'Category'].item()  
+    df2_a.loc[p, 'Region']   = region 
+    df2_a.loc[p, 'Category'] = category 
+    df2_a.loc[p, 'Order Date'] = orderdate 
+df2_a['Product Name'] = df2_a['Product Name'][0:10]
+del df2_a['index']
+df2_a = df2_a.to_string(index=False)
+print('                       Products with lower Quantity of Sales')
+print(df2_a)
+
+# Products with one or no sales
+df3 = df2[df2['Quantity'] < 2].sort_values(by=['Region'], ascending=[False])
+df3 = df3.groupby(['Region'])['Quantity'].agg("count")
+print('Quantity of Products with one or no Sales (per Region)')
+print(df3)
+
+# Regions: ['Central' 'East' 'South' 'West']
+# ten products that have higher quantity of sales at Central region
+df3 = df2[df2.Region == 'Central'].sort_values(by=['Quantity', 'Product Name'], ascending=[False, True])
+print('Products with higher Quantity of Sales (Central Region)')
+print(df3.head(10))
+
+# ten products that have lower quantity of sales at Central region
+df4 = df2[df2.Region == 'Central'].sort_values(by=['Quantity', 'Product Name'], ascending=[True, True])
+print('Products with lower Quantity of Sales (Central Region)')
+print(df4.head(10))
+
+# ten products that have higher quantity of sales at East region
+df5 = df2[df2.Region == 'East'].sort_values(by=['Quantity', 'Product Name'], ascending=[False, True])
+print('Products with higher Quantity of Sales (East Region)')
+print(df5.head(10))
+
+# ten products that have lower quantity of sales at East region
+df5 = df2[df2.Region == 'East'].sort_values(by=['Quantity', 'Product Name'], ascending=[True, True])
+print('Products with lower Quantity of Sales (East Region)')
+print(df5.head(10))
+
+# ten products that have higher quantity of sales at South region
+df6 = df2[df2.Region == 'South'].sort_values(by=['Quantity', 'Product Name'], ascending=[False, True])
+print('Products with higher Quantity of Sales (South Region)')
+print(df6.head(10))
+
+# ten products that have lower quantity of sales at South region
+df7 = df2[df2.Region == 'South'].sort_values(by=['Quantity', 'Product Name'], ascending=[True, True])
+print('Products with lower Quantity of Sales (South Region)')
+print(df7.head(10))
+
+# ten products that have higher quantity of sales at West region
+df8 = df2[df2.Region == 'West'].sort_values(by=['Quantity', 'Product Name'], ascending=[False, True])
+print('Products with higher Quantity of Sales (West Region)')
+print(df8.head(10))
+
+# ten products that have lower quantity of sales at West region
+df9 = df2[df2.Region == 'West'].sort_values(by=['Quantity', 'Product Name'], ascending=[True, True])
+print('Products with lower Quantity of Sales (West Region)')
+print(df9.head(10))
+
+
